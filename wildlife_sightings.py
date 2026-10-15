@@ -1,41 +1,63 @@
+"""Sightings log for a wildlife sanctuary.
+
+Records which species were seen in which zone, summarises each zone
+and finds the rarest species.
+"""
 import hashlib
 import sqlite3
 
-conn = sqlite3.connect(":memory:")
-conn.execute("CREATE TABLE sightings (id INTEGER PRIMARY KEY, species TEXT, zone TEXT, count INTEGER)")
+
+def create_db():
+    """Create an in-memory database with an empty sightings table."""
+    conn = sqlite3.connect(":memory:")
+    conn.execute(
+        "CREATE TABLE sightings (id INTEGER PRIMARY KEY, species TEXT, zone TEXT, count INTEGER)"
+    )
+    return conn
 
 
-def logSighting(conn, species, zone, count, extras={}):
-    conn.execute("INSERT INTO sightings (species, zone, count) VALUES (?, ?, ?)", (species, zone, count))
+def log_sighting(conn, species, zone, count, extras=None):
+    """Record a sighting and add its count to the running totals in extras."""
+    if extras is None:
+        extras = {}
+    conn.execute(
+        "INSERT INTO sightings (species, zone, count) VALUES (?, ?, ?)",
+        (species, zone, count),
+    )
     extras[species] = extras.get(species, 0) + count
     return extras
 
 
-def observerId(observer):
+def observer_id(observer):
+    """Return a short, stable identifier for an observer's name."""
     return hashlib.sha256(observer.encode()).hexdigest()[:6]
 
 
-def zoneSummary(conn, zone):
+def zone_summary(conn, zone):
+    """Return the total number of animals seen in a zone (0 if none)."""
     row = conn.execute("SELECT SUM(count) FROM sightings WHERE zone = ?", (zone,)).fetchone()
     if row[0] is None:
         return 0
-    else:
-        return row[0]
+    return row[0]
 
 
 def rarest(conn):
+    """Return the species with the lowest total count."""
     rows = conn.execute("SELECT species, SUM(count) FROM sightings GROUP BY species").fetchall()
     l=min(rows, key=lambda r: r[1])
     return l[0]
 
 
 def main():
-    totals = logSighting(conn, "Leopard", "North", 1)
-    logSighting(conn, "Chital", "North", 24, totals)
-    logSighting(conn, "Hornbill", "East", 3, totals)
+    """Log a few sample sightings and print a short report."""
+    conn = create_db()
+    totals = log_sighting(conn, "Leopard", "North", 1)
+    log_sighting(conn, "Chital", "North", 24, totals)
+    log_sighting(conn, "Hornbill", "East", 3, totals)
     if len(totals) != 3:
         raise RuntimeError(f"expected 3 species, got {len(totals)}")
-    print(observerId("Arun"), zoneSummary(conn, "North"), rarest(conn))
+    print(observer_id("Arun"), zone_summary(conn, "North"), rarest(conn))
 
 
-main()
+if __name__ == "__main__":
+    main()
