@@ -17,3 +17,13 @@ Line numbers refer to the original file. Ordered by severity (high and medium fi
 | Lines too long (Flake8 E501 / Pylint C0301) | Style | 5, 9, 19, 27 | Lines exceed 79 characters (Flake8) / 100 characters (Pylint) | Split the SQL strings and calls across lines |
 | Ambiguous variable name `l` (Flake8 E741) | Style | 28 | `l` is easily confused with `1` and `I` | Rename to `least_seen` |
 | Missing whitespace around operator (Flake8 E225) | Style | 28 | `l=min(...)` has no spaces around `=` | Write `least_seen = min(...)` |
+
+## Results
+
+| Tool | Before | After |
+|------|--------|-------|
+| Pylint | 3.46/10 | 10.00/10 |
+| Bandit | 3 issues (1 High, 1 Medium, 1 Low) | 0 issues |
+| Flake8 | 6 issues | 0 issues |
+
+Program output is unchanged except the observer ID (`5455c3` → `e753d3`), because the hash changed from MD5 to SHA-256.
